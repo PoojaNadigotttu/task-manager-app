@@ -3,11 +3,9 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 
-const authRoutes = require("./routes/auth");      
-const projectRoutes = require("./routes/project"); 
+const authRoutes = require("./routes/auth");
+const projectRoutes = require("./routes/project");
 const taskRoutes = require("./routes/task");
-
-
 
 const app = express();
 
@@ -15,9 +13,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Routes          
-app.use("/api/auth", authRoutes);        
-app.use("/api/project", projectRoutes);  
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/project", projectRoutes);
 app.use("/api/task", taskRoutes);
 
 // Test route
@@ -25,11 +23,18 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-// DB connection
+// DB Connection (IMPORTANT FIX)
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(err));
+  .then(() => {
+    console.log("MongoDB Connected");
+  })
+  .catch((err) => {
+    console.log("MongoDB Connection Error:", err.message);
+  });
 
-// Server start
-const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Server start (RAILWAY SAFE)
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
