@@ -1,5 +1,16 @@
+const API_BASE = "https://task-manager-app-production-aa3b.up.railway.app";
+
 let allTasks = [];
 let currentFilter = "all";
+
+
+// ================= ERROR HANDLER =================
+function handleError(res, data) {
+  if (!res.ok) {
+    throw new Error(data.msg || "Something went wrong");
+  }
+}
+
 
 // ================= SIGNUP =================
 async function signup() {
@@ -8,7 +19,7 @@ async function signup() {
     const email = document.getElementById("semail").value;
     const password = document.getElementById("spassword").value;
 
-    const res = await fetch("http://localhost:5000/api/auth/register", {
+    const res = await fetch(`${API_BASE}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password })
@@ -22,7 +33,7 @@ async function signup() {
     showLogin();
 
   } catch (err) {
-    console.log(err);
+    alert(err.message);
   }
 }
 
@@ -33,7 +44,7 @@ async function login() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
-    const res = await fetch("http://localhost:5000/api/auth/login", {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
@@ -43,19 +54,28 @@ async function login() {
 
     if (!res.ok) return alert(data.msg || "Login failed");
 
+    // ✅ SAFE STORAGE
     localStorage.setItem("token", data.token);
-    localStorage.setItem("userId", data.user._id);
-    localStorage.setItem("role", data.user.role);
+
+    const userId = data.user?._id || data.user?.id;
+
+    if (!userId) {
+      alert("Login failed: userId not received");
+      return;
+    }
+
+    localStorage.setItem("userId", userId);
+    localStorage.setItem("role", data.user?.role || "member");
 
     window.location.href = "dashboard.html";
 
   } catch (err) {
-    console.log(err);
+    alert(err.message);
   }
 }
 
 
-// ================= TOKEN =================
+// ================= AUTH HEADERS =================
 function getAuthHeaders() {
   const token = localStorage.getItem("token");
 
@@ -68,97 +88,131 @@ function getAuthHeaders() {
 
 // ================= DASHBOARD =================
 async function loadDashboard() {
-  const userId = localStorage.getItem("userId");
+  try {
+    const userId = localStorage.getItem("userId");
 
-  const res = await fetch(
-    `http://localhost:5000/api/task/dashboard/${userId}`,
-    { headers: getAuthHeaders() }
-  );
+    if (!userId) {
+      console.log("No userId found");
+      return;
+    }
 
-  const data = await res.json();
+    const res = await fetch(
+      `${API_BASE}/api/task/dashboard/${userId}`,
+      { headers: getAuthHeaders() }
+    );
 
-  document.getElementById("total").innerText = data.total || 0;
-  document.getElementById("completed").innerText = data.completed || 0;
-  document.getElementById("pending").innerText = data.pending || 0;
-  document.getElementById("overdue").innerText = data.overdue || 0;
+    const data = await res.json();
+    handleError(res, data);
+
+    document.getElementById("total").innerText = data.total || 0;
+    document.getElementById("completed").innerText = data.completed || 0;
+    document.getElementById("pending").innerText = data.pending || 0;
+    document.getElementById("overdue").innerText = data.overdue || 0;
+
+  } catch (err) {
+    console.log(err.message);
+  }
 }
 
 
 // ================= PROJECTS =================
 async function loadProjects() {
-  const container = document.getElementById("projectContainer");
-  const select = document.getElementById("projectSelect");
+  try {
+    const container = document.getElementById("projectContainer");
+    const select = document.getElementById("projectSelect");
 
-  if (!container) return;
+    if (!container) return;
 
-  const userId = localStorage.getItem("userId");
+    const userId = localStorage.getItem("userId");
 
-  const res = await fetch(
-    `http://localhost:5000/api/project/user/${userId}`,
-    { headers: getAuthHeaders() }
-  );
+    const res = await fetch(
+      `${API_BASE}/api/project/user/${userId}`,
+      { headers: getAuthHeaders() }
+    );
 
-  const projects = await res.json();
+    const projects = await res.json();
+    handleError(res, projects);
 
-  container.innerHTML = "";
-
-  if (select) {
-    select.innerHTML = `<option value="">Select Project</option>`;
-  }
-
-  projects.forEach(p => {
-
-    container.innerHTML += `
-      <div class="project-card" onclick="selectProject('${p._id}')">
-        📁 ${p.projectName}
-      </div>
-    `;
+    container.innerHTML = "";
 
     if (select) {
-      select.innerHTML += `<option value="${p._id}">${p.projectName}</option>`;
+      select.innerHTML = `<option value="">Select Project</option>`;
     }
-  });
+
+    projects.forEach(p => {
+      container.innerHTML += `
+        <div class="project-card" onclick="selectProject('${p._id}')">
+          📁 ${p.projectName}
+        </div>
+      `;
+
+      if (select) {
+        select.innerHTML += `<option value="${p._id}">${p.projectName}</option>`;
+      }
+    });
+
+  } catch (err) {
+    console.log(err.message);
+  }
 }
 
+
+// ================= CREATE PROJECT =================
 async function createProject() {
-  const projectName = document.getElementById("projectName").value;
+  try {
+    const projectName = document.getElementById("projectName").value;
 
-  if (!projectName) return alert("Enter project name");
+    if (!projectName) return alert("Enter project name");
 
-  await fetch("http://localhost:5000/api/project/create", {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ projectName })
-  });
+    const res = await fetch(`${API_BASE}/api/project/create`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ projectName })
+    });
 
-  loadProjects();
+    const data = await res.json();
+    handleError(res, data);
+
+    loadProjects();
+
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 
 // ================= LOAD TASKS =================
 async function loadTasks() {
-  const userId = localStorage.getItem("userId");
-  const projectId = localStorage.getItem("currentProject");
+  try {
+    const userId = localStorage.getItem("userId");
+    const projectId = localStorage.getItem("currentProject");
 
-  const res = await fetch(
-    `http://localhost:5000/api/task/user/${userId}`,
-    { headers: getAuthHeaders() }
-  );
+    if (!userId) return;
 
-  let tasks = await res.json();
+    const res = await fetch(
+      `${API_BASE}/api/task/user/${userId}`,
+      { headers: getAuthHeaders() }
+    );
 
-  if (projectId) {
-    tasks = tasks.filter(t => t.projectId === projectId);
+    let tasks = await res.json();
+    handleError(res, tasks);
+
+    if (projectId) {
+      tasks = tasks.filter(t => t.projectId === projectId);
+    }
+
+    allTasks = tasks;
+
+    applyFilters();
+    renderKanban(tasks);
+
+  } catch (err) {
+    console.log(err.message);
   }
-
-  allTasks = tasks;
-
-  applyFilters();
-  renderKanban(tasks);
 }
 
 
-// ================= ROLE CHECK (FRONTEND SAFETY) =================
+// ================= ROLE CHECK =================
 function isAdmin() {
   return localStorage.getItem("role") === "admin";
 }
@@ -166,45 +220,54 @@ function isAdmin() {
 
 // ================= CREATE TASK =================
 async function createTask() {
+  try {
+    if (!isAdmin()) return alert("Only admin can create tasks");
 
-  // ❗ FRONTEND BLOCK (extra safety)
-  if (!isAdmin()) {
-    alert("Only admin can create tasks");
-    return;
+    const task = {
+      title: document.getElementById("title").value,
+      description: document.getElementById("desc").value,
+      projectId: document.getElementById("projectSelect")?.value || "",
+      priority: document.getElementById("priority").value,
+      dueDate: document.getElementById("date").value,
+      assignedTo: localStorage.getItem("userId")
+    };
+
+    const res = await fetch(`${API_BASE}/api/task/create`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(task)
+    });
+
+    const data = await res.json();
+    handleError(res, data);
+
+    loadTasks();
+    loadDashboard();
+
+  } catch (err) {
+    alert(err.message);
   }
-
-  const task = {
-    title: document.getElementById("title").value,
-    description: document.getElementById("desc").value,
-    projectId: document.getElementById("projectSelect")?.value || "",
-    priority: document.getElementById("priority").value,
-    dueDate: document.getElementById("date").value,
-    assignedTo: localStorage.getItem("userId")
-  };
-
-  if (!task.projectId) return alert("Select project");
-
-  await fetch("http://localhost:5000/api/task/create", {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(task)
-  });
-
-  loadTasks();
-  loadDashboard();
 }
 
 
 // ================= UPDATE TASK =================
 async function updateTask(taskId, status) {
-  await fetch(`http://localhost:5000/api/task/update/${taskId}`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ status })
-  });
+  try {
+    const res = await fetch(`${API_BASE}/api/task/update/${taskId}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status })
+    });
 
-  loadTasks();
-  loadDashboard();
+    const data = await res.json();
+    handleError(res, data);
+
+    loadTasks();
+    loadDashboard();
+
+  } catch (err) {
+    console.log(err.message);
+  }
 }
 
 
@@ -257,7 +320,6 @@ function renderTasks(tasks) {
 
 // ================= KANBAN =================
 function renderKanban(tasks) {
-
   const todo = document.getElementById("todoColumn");
   const progress = document.getElementById("progressColumn");
   const done = document.getElementById("doneColumn");
@@ -269,7 +331,6 @@ function renderKanban(tasks) {
   done.innerHTML = "";
 
   tasks.forEach(task => {
-
     const card = `
       <div class="task-card"
            draggable="true"
@@ -286,48 +347,9 @@ function renderKanban(tasks) {
 }
 
 
-// ================= DRAG DROP =================
-function drag(event, id) {
-  event.dataTransfer.setData("taskId", id);
-}
-
-function allowDrop(event) {
-  event.preventDefault();
-}
-
-async function drop(event, status) {
-  event.preventDefault();
-  const id = event.dataTransfer.getData("taskId");
-  await updateTask(id, status);
-}
-
-
-// ================= PROJECT SELECT =================
-function selectProject(id) {
-  localStorage.setItem("currentProject", id);
-  loadTasks();
-}
-
-
 // ================= INIT =================
 window.addEventListener("DOMContentLoaded", () => {
   loadDashboard();
   loadProjects();
   loadTasks();
 });
-
-
-// ================= LOGOUT =================
-function logout() {
-  localStorage.clear();
-  window.location.href = "index.html";
-}
-
-function checkRoleUI() {
-  const role = localStorage.getItem("role");
-
-  if (role === "member") {
-    document.getElementById("create").style.display = "none";
-    document.getElementById("projects").style.display = "none";
-  }
-}
