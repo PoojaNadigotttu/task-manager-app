@@ -22,21 +22,25 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-// ✅ SAFE DB CONNECTION (FIXED)
-const MONGO_URI = process.env.MONGO_URI;
+const mongoUri = process.env.MONGO_URI;
+console.log("MONGO_URI defined:", !!mongoUri);
 
-if (!MONGO_URI) {
-  console.error("❌ MONGO_URI is not defined in environment variables");
-} else {
-  mongoose
-    .connect(MONGO_URI)
-    .then(() => {
-      console.log("MongoDB Connected Successfully");
-    })
-    .catch((err) => {
-      console.error("MongoDB Connection Error:", err.message);
-    });
+if (!mongoUri) {
+  console.error("MONGO_URI is not set!");
+  process.exit(1);
 }
+
+mongoose.connect(mongoUri, {
+  connectTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 10000,
+})
+  .then(() => {
+    console.log("MongoDB Connected");
+  })
+  .catch((err) => {
+    console.log("MongoDB Connection Error:", err.message);
+    console.log("Stack:", err.stack);
+  });
 
 // Server start
 const PORT = process.env.PORT || 5000;
