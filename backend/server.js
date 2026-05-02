@@ -22,21 +22,28 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-// ✅ SAFE DB CONNECTION (FIXED)
-const MONGO_URI = process.env.MONGO_URI;
+// DB Connection
+const mongoUri = process.env.MONGO_URI;
 
-if (!MONGO_URI) {
-  console.error("❌ MONGO_URI is not defined in environment variables");
-} else {
-  mongoose
-    .connect(MONGO_URI)
-    .then(() => {
-      console.log("MongoDB Connected Successfully");
-    })
-    .catch((err) => {
-      console.error("MongoDB Connection Error:", err.message);
-    });
+if (!mongoUri) {
+  console.error("ERROR: MONGO_URI environment variable is not set");
+  process.exit(1);
 }
+
+// Ensure authSource is included for authentication
+const connectionUri = mongoUri.includes('authSource') ? mongoUri : `${mongoUri}?authSource=admin`;
+
+mongoose.connect(connectionUri, {
+  connectTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 10000,
+})
+  .then(() => {
+    console.log("✅ MongoDB Connected Successfully");
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB Connection Error:", err.message);
+    console.error("Connection string:", mongoUri);
+  });
 
 // Server start
 const PORT = process.env.PORT || 5000;
