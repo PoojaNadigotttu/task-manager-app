@@ -1,0 +1,17 @@
+# Dependencies — let Railpack/npm install these fresh
+node_modules/
+
+# Environment variables — set these in Railway's UI, never commit secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime
+*.pid
+*.seed
+*.pid.lock
