@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task Manager Dashboard</title>
+  <link rel="stylesheet" href="./styles.css">
+
+  <!-- smooth scroll -->
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <h2>Task Manager</h2>
+
+  <!-- FIXED NAVIGATION -->
+  <a href="#dashboard">📊 Dashboard</a>
+  <a href="#projects">📁 Projects</a>
+  <a href="#create">📝 Create Task</a>
+  <a href="#tasks">📌 Tasks</a>
+  <a href="#kanban">📊 Board</a>
+
+  <a href="#" onclick="logout()">🚪 Logout</a>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+
+    <div class="navbar">
+      <h2>Welcome Back 👋</h2>
+    </div>
+
+    <!-- STATS -->
+    <div class="cards">
+
+      <div class="card total">
+        <h3>Total Tasks</h3>
+        <h1 id="total">0</h1>
+      </div>
+
+      <div class="card completed">
+        <h3>Completed</h3>
+        <h1 id="completed">0</h1>
+      </div>
+
+      <div class="card pending">
+        <h3>Pending</h3>
+        <h1 id="pending">0</h1>
+      </div>
+
+      <div class="card overdue">
+        <h3>Overdue</h3>
+        <h1 id="overdue">0</h1>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="form-box">
+
+    <h3>🔍 Search & Filters</h3>
+
+    <input id="searchInput"
+           oninput="applyFilters()"
+           placeholder="Search tasks..."><br><br>
+
+    <button onclick="currentFilter='all'; applyFilters()">All</button>
+    <button onclick="currentFilter='todo'; applyFilters()">Todo</button>
+    <button onclick="currentFilter='inprogress'; applyFilters()">In Progress</button>
+    <button onclick="currentFilter='done'; applyFilters()">Done</button>
+
+  </div>
+
+  <!-- PROJECTS -->
+  <div id="projects" class="form-box">
+    <h3>📁 Your Projects</h3>
+    <div id="projectContainer" class="project-grid"></div>
+  </div>
+
+  <!-- CREATE TASK -->
+  <div id="create" class="form-box">
+
+    <h3>➕ Create New Task</h3>
+    <select id="projectSelect"></select><br><br>
+
+    <input id="title" placeholder="Task Title"><br><br>
+    <input id="desc" placeholder="Task Description"><br><br>
+    <input id="priority" placeholder="Priority (low/medium/high)"><br><br>
+    <input id="date" type="date"><br><br>
+
+    <button onclick="createTask()">Create Task</button>
+
+  </div>
+
+  <!-- TASK TABLE -->
+  <div id="tasks" class="task-section">
+
+    <h3>📌 Your Tasks</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Description</th>
+          <th>Status</th>
+          <th>Priority</th>
+          <th>Due Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody id="taskBody"></tbody>
+    </table>
+
+  </div>
+
+  <!-- KANBAN -->
+  <div id="kanban" class="task-section">
+
+    <h3>📊 Task Board (Drag & Drop)</h3>
+
+    <div class="kanban">
+
+      <div class="column"
+           ondrop="drop(event,'todo')"
+           ondragover="allowDrop(event)">
+        <h4>🟥 To Do</h4>
+        <div id="todoColumn"></div>
+      </div>
+
+      <div class="column"
+           ondrop="drop(event,'inprogress')"
+           ondragover="allowDrop(event)">
+        <h4>🟡 In Progress</h4>
+        <div id="progressColumn"></div>
+      </div>
+
+      <div class="column"
+           ondrop="drop(event,'done')"
+           ondragover="allowDrop(event)">
+        <h4>🟢 Done</h4>
+        <div id="doneColumn"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
