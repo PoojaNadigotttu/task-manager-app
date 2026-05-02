@@ -1,4 +1,3 @@
-const crypto = require("crypto");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -23,16 +22,23 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-// DB Connection (IMPORTANT FIX)
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB Connected");
-  })
-  .catch((err) => {
-    console.log("MongoDB Connection Error:", err.message);
-  });
+// ✅ SAFE DB CONNECTION (FIXED)
+const MONGO_URI = process.env.MONGO_URI;
 
-// Server start (RAILWAY SAFE)
+if (!MONGO_URI) {
+  console.error("❌ MONGO_URI is not defined in environment variables");
+} else {
+  mongoose
+    .connect(MONGO_URI)
+    .then(() => {
+      console.log("MongoDB Connected Successfully");
+    })
+    .catch((err) => {
+      console.error("MongoDB Connection Error:", err.message);
+    });
+}
+
+// Server start
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
